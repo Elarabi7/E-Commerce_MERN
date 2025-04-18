@@ -1,4 +1,4 @@
-import cartModel from "../models/cartModel";
+import cartModel, { ICart, ICartItem } from "../models/cartModel";
 import productModel from "../models/productModel";
 
 interface createCart {
@@ -76,10 +76,8 @@ export const updateItemInCart = async ({ productId, quantity, userId }: UpdateIt
 
     const otherCartItems = cart.items.filter((p) => p.product.toString() !== productId);
 
-    let total = otherCartItems.reduce((sum, product) => {
-        sum += product.quantity * product.unitPrice;
-        return sum;
-    }, 0)
+    let total = calculateTotalItems({ cartItems: otherCartItems });
+
     exisitsInCart.quantity = quantity;
 
     total += exisitsInCart.quantity * exisitsInCart.unitPrice;
@@ -87,4 +85,56 @@ export const updateItemInCart = async ({ productId, quantity, userId }: UpdateIt
     const updatedCart = await cart.save();
     return { data: updatedCart, statusCode: 200 };
 
+}
+
+interface DeleteItemInCart {
+    userId: string;
+    productId: any;
+}
+
+export const deleteItemInCart = async ({ productId, userId }: DeleteItemInCart) => {
+    const cart = await getActiveCart({ userId });
+
+    const exisitsInCart = cart.items.find((p) => p.product.toString() === productId);
+    if (!exisitsInCart) {
+        return { data: "Product not found in cart", statusCode: 400 };
+    }
+
+    const otherCartItems = cart.items.filter((p) => p.product.toString() !== productId);
+
+    const total = calculateTotalItems({ cartItems: otherCartItems });
+
+
+    cart.items = otherCartItems;
+    cart.totalPrice -= total;
+
+    const updatedCart = await cart.save();
+
+    return { data: updatedCart, statusCode: 200 };
+}
+
+interface ClearCart {
+    userId: string;
+}
+
+export const clearCart = async ({ userId }: ClearCart) => {
+    const cart = await getActiveCart({ userId });
+    if (!cart) {
+        return { data: "Cart not found", statusCode: 400 };
+    }
+    cart.items = [];
+    cart.totalPrice = 0;
+    const updatedCart = await cart.save();
+    return { data: updatedCart, statusCode: 200 };
+}
+
+
+
+
+const calculateTotalItems = ({ cartItems }: { cartItems: ICartItem[] }) => {
+    const total = cartItems.reduce((sum, product) => {
+        sum += product.quantity * product.unitPrice;
+        return sum;
+    }, 0)
+    return total;
 }
