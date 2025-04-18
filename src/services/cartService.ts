@@ -1,4 +1,5 @@
 import cartModel from "../models/cartModel";
+import productModel from "../models/productModel";
 
 interface createCart {
     userId: string;
@@ -18,4 +19,38 @@ export const getActiveCart = async ({ userId }: getActiveCart) => {
         cart = await createCart({ userId });
     }
     return cart;
+}
+
+interface AddItemToCart {
+    userId: string;
+    productId: any;
+    quantity: number;
+}
+
+
+export const addItemToCart = async ({ productId, quantity, userId }: AddItemToCart) => {
+    const cart = await getActiveCart({ userId });
+
+    const exisitsInCart = cart.items.find((p) => p.product.toString() === productId);
+    if (exisitsInCart) {
+        return { data: "Product already exists in cart", statusCode: 400 };
+    }
+    const product = await productModel.findById(productId);
+    if (!product) {
+        return { data: "Product not found", statusCode: 400 };
+    }
+    if (product.stock < quantity) {
+        return { data: "Not enough stock", statusCode: 400 };
+    }
+    cart.items.push({
+        product: productId,
+        unitPrice: product.price,
+        quantity,
+    });
+    
+    cart.totalPrice += product.price * quantity;
+    const updatedCart = await cart.save();
+    return { data: updatedCart, statusCode: 200 };
+
+
 }
