@@ -143,7 +143,7 @@ export const checkout = async ({ userId, address }: Checkout) => {
     const orderItems: IOrderItem[] = [];
     for (const item of cart.items) {
         const product = await productModel.findById(item.product);
-        
+
         if (!product) {
             return { data: "Product not found", statusCode: 400 };
         }
@@ -172,10 +172,10 @@ export const checkout = async ({ userId, address }: Checkout) => {
 
 
 
-    const calculateTotalItems = ({ cartItems }: { cartItems: ICartItem[] }) => {
-        const total = cartItems.reduce((sum, product) => {
-            sum += product.quantity * product.unitPrice;
-            return sum;
-        }, 0)
-        return total;
-    }
+const calculateTotalItems = ({ cartItems }: { cartItems: ICartItem[] }) => {
+    const total = cartItems.reduce((sum, product) => {
+        sum += product.quantity * product.unitPrice;
+        return sum;
+    }, 0)
+    return total;
+}
